@@ -118,5 +118,5 @@ libbitcoinconsensus.pc
 contrib/devtools/split-debug.sh
 
 # ionut
-bitcoin/nbproject/private/private.xml
+bitcoin
 
