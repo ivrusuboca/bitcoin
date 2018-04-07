@@ -450,12 +450,21 @@ C++ data structures
 
 - Vector bounds checking is only enabled in debug mode. Do not rely on it
 
-- Make sure that constructors initialize all fields. If this is skipped for a
-  good reason (i.e., optimization on the critical path), add an explicit
-  comment about this
+- Initialize all non-static class members where they are defined.
+  If this is skipped for a good reason (i.e., optimization on the critical
+  path), add an explicit comment about this
 
   - *Rationale*: Ensure determinism by avoiding accidental use of uninitialized
     values. Also, static analyzers balk about this.
+    Initializing the members in the declaration makes it easy to
+    spot uninitialized ones.
+
+```cpp
+class A
+{
+    uint32_t m_count{0};
+}
+```
 
 - By default, declare single-argument constructors `explicit`.
 
@@ -473,18 +482,6 @@ C++ data structures
 
   - *Rationale*: Easier to understand what is happening, thus easier to spot mistakes, even for those
   that are not language lawyers
-
-- Initialize all non-static class members where they are defined
-
-  - *Rationale*: Initializing the members in the declaration makes it easy to spot uninitialized ones,
-  and avoids accidentally reading uninitialized memory
-
-```cpp
-class A
-{
-    uint32_t m_count{0};
-}
-```
 
 Strings and formatting
 ------------------------
@@ -624,6 +621,19 @@ GUI
   - *Rationale*: Model classes pass through events and data from the core, they
     should not interact with the user. That's where View classes come in. The converse also
     holds: try to not directly access core data structures from Views.
+
+- Avoid adding slow or blocking code in the GUI thread. In particular do not
+  add new `interface::Node` and `interface::Wallet` method calls, even if they
+  may be fast now, in case they are changed to lock or communicate across
+  processes in the future.
+
+  Prefer to offload work from the GUI thread to worker threads (see
+  `RPCExecutor` in console code as an example) or take other steps (see
+  https://doc.qt.io/archives/qq/qq27-responsive-guis.html) to keep the GUI
+  responsive.
+
+  - *Rationale*: Blocking the GUI thread can increase latency, and lead to
+    hangs and deadlocks.
 
 Subtrees
 ----------
