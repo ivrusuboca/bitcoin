@@ -8,7 +8,7 @@
 #include <qt/guiconstants.h>
 #include <qt/guiutil.h>
 
-#include <interface/node.h>
+#include <interfaces/node.h>
 #include <sync.h>
 #include <utiltime.h>
 
@@ -46,15 +46,13 @@ public:
     Qt::SortOrder sortOrder;
 
     /** Pull a full list of banned nodes from CNode into our cache */
-    void refreshBanlist(interface::Node& node)
+    void refreshBanlist(interfaces::Node& node)
     {
         banmap_t banMap;
         node.getBanned(banMap);
 
         cachedBanlist.clear();
-#if QT_VERSION >= 0x040700
         cachedBanlist.reserve(banMap.size());
-#endif
         for (const auto& entry : banMap)
         {
             CCombinedBan banEntry;
@@ -82,7 +80,7 @@ public:
     }
 };
 
-BanTableModel::BanTableModel(interface::Node& node, ClientModel *parent) :
+BanTableModel::BanTableModel(interfaces::Node& node, ClientModel *parent) :
     QAbstractTableModel(parent),
     m_node(node),
     clientModel(parent)

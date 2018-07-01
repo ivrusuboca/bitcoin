@@ -26,49 +26,32 @@ public:
     virtual bool GetKey(const CKeyID &address, CKey& key) const =0;
 };
 
-/** Virtual base class for signature creators. */
+/** Interface for signature creators. */
 class BaseSignatureCreator {
-protected:
-    const SigningProvider* m_provider;
-
 public:
-    explicit BaseSignatureCreator(const SigningProvider* provider) : m_provider(provider) {}
-    const SigningProvider& Provider() const { return *m_provider; }
     virtual ~BaseSignatureCreator() {}
     virtual const BaseSignatureChecker& Checker() const =0;
 
     /** Create a singular (non-script) signature. */
-    virtual bool CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, SigVersion sigversion) const =0;
+    virtual bool CreateSig(const SigningProvider& provider, std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, SigVersion sigversion) const =0;
 };
 
 /** A signature creator for transactions. */
-class TransactionSignatureCreator : public BaseSignatureCreator {
-    const CTransaction* txTo;
+class MutableTransactionSignatureCreator : public BaseSignatureCreator {
+    const CMutableTransaction* txTo;
     unsigned int nIn;
     int nHashType;
     CAmount amount;
-    const TransactionSignatureChecker checker;
+    const MutableTransactionSignatureChecker checker;
 
 public:
-    TransactionSignatureCreator(const SigningProvider* provider, const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn=SIGHASH_ALL);
+    MutableTransactionSignatureCreator(const CMutableTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn = SIGHASH_ALL);
     const BaseSignatureChecker& Checker() const override { return checker; }
-    bool CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, SigVersion sigversion) const override;
-};
-
-class MutableTransactionSignatureCreator : public TransactionSignatureCreator {
-    CTransaction tx;
-
-public:
-    MutableTransactionSignatureCreator(const SigningProvider* provider, const CMutableTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn) : TransactionSignatureCreator(provider, &tx, nInIn, amountIn, nHashTypeIn), tx(*txToIn) {}
+    bool CreateSig(const SigningProvider& provider, std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, SigVersion sigversion) const override;
 };
 
 /** A signature creator that just produces 72-byte empty signatures. */
-class DummySignatureCreator : public BaseSignatureCreator {
-public:
-    explicit DummySignatureCreator(const SigningProvider* provider) : BaseSignatureCreator(provider) {}
-    const BaseSignatureChecker& Checker() const override;
-    bool CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, SigVersion sigversion) const override;
-};
+extern const BaseSignatureCreator& DUMMY_SIGNATURE_CREATOR;
 
 struct SignatureData {
     CScript scriptSig;
@@ -79,7 +62,7 @@ struct SignatureData {
 };
 
 /** Produce a script signature using a generic signature creator. */
-bool ProduceSignature(const BaseSignatureCreator& creator, const CScript& scriptPubKey, SignatureData& sigdata);
+bool ProduceSignature(const SigningProvider& provider, const BaseSignatureCreator& creator, const CScript& scriptPubKey, SignatureData& sigdata);
 
 /** Produce a script signature for a transaction. */
 bool SignSignature(const SigningProvider &provider, const CScript& fromPubKey, CMutableTransaction& txTo, unsigned int nIn, const CAmount& amount, int nHashType);
@@ -90,7 +73,6 @@ SignatureData CombineSignatures(const CScript& scriptPubKey, const BaseSignature
 
 /** Extract signature data from a transaction, and insert it. */
 SignatureData DataFromTransaction(const CMutableTransaction& tx, unsigned int nIn);
-void UpdateTransaction(CMutableTransaction& tx, unsigned int nIn, const SignatureData& data);
 void UpdateInput(CTxIn& input, const SignatureData& data);
 
 /* Check whether we know how to sign for an output like this, assuming we

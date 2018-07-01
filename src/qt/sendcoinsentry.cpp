@@ -32,9 +32,7 @@ SendCoinsEntry::SendCoinsEntry(const PlatformStyle *_platformStyle, QWidget *par
 
     if (platformStyle->getUseExtraSpacing())
         ui->payToLayout->setSpacing(4);
-#if QT_VERSION >= 0x040700
     ui->addAsLabel->setPlaceholderText(tr("Enter a label for this address to add it to your address book"));
-#endif
 
     // normal bitcoin address field
     GUIUtil::setupAddressWidget(ui->payTo, this);
@@ -127,7 +125,7 @@ void SendCoinsEntry::useAvailableBalanceClicked()
     Q_EMIT useAvailableBalance(this);
 }
 
-bool SendCoinsEntry::validate(interface::Node& node)
+bool SendCoinsEntry::validate(interfaces::Node& node)
 {
     if (!model)
         return false;

@@ -27,7 +27,6 @@
 #endif
 
 #include <algorithm>
-#include <memory>
 
 LockedPoolManager* LockedPoolManager::_instance = nullptr;
 std::once_flag LockedPoolManager::init_flag;
@@ -142,7 +141,7 @@ Arena::Stats Arena::stats() const
 }
 
 #ifdef ARENA_DEBUG
-void printchunk(char* base, size_t sz, bool used) {
+static void printchunk(char* base, size_t sz, bool used) {
     std::cout <<
         "0x" << std::hex << std::setw(16) << std::setfill('0') << base <<
         " 0x" << std::hex << std::setw(16) << std::setfill('0') << sz <<

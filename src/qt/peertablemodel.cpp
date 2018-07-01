@@ -8,7 +8,7 @@
 #include <qt/guiconstants.h>
 #include <qt/guiutil.h>
 
-#include <interface/node.h>
+#include <interfaces/node.h>
 #include <validation.h> // for cs_main
 #include <sync.h>
 
@@ -57,16 +57,14 @@ public:
     std::map<NodeId, int> mapNodeRows;
 
     /** Pull a full list of peers from vNodes into our cache */
-    void refreshPeers(interface::Node& node)
+    void refreshPeers(interfaces::Node& node)
     {
         {
             cachedNodeStats.clear();
 
-            interface::Node::NodesStats nodes_stats;
+            interfaces::Node::NodesStats nodes_stats;
             node.getNodesStats(nodes_stats);
-#if QT_VERSION >= 0x040700
             cachedNodeStats.reserve(nodes_stats.size());
-#endif
             for (auto& node_stats : nodes_stats)
             {
                 CNodeCombinedStats stats;
@@ -102,7 +100,7 @@ public:
     }
 };
 
-PeerTableModel::PeerTableModel(interface::Node& node, ClientModel *parent) :
+PeerTableModel::PeerTableModel(interfaces::Node& node, ClientModel *parent) :
     QAbstractTableModel(parent),
     m_node(node),
     clientModel(parent),

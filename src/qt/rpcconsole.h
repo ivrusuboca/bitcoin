@@ -19,7 +19,7 @@ class PlatformStyle;
 class RPCTimerInterface;
 class WalletModel;
 
-namespace interface {
+namespace interfaces {
     class Node;
 }
 
@@ -38,16 +38,17 @@ class RPCConsole: public QWidget
     Q_OBJECT
 
 public:
-    explicit RPCConsole(interface::Node& node, const PlatformStyle *platformStyle, QWidget *parent);
+    explicit RPCConsole(interfaces::Node& node, const PlatformStyle *platformStyle, QWidget *parent);
     ~RPCConsole();
 
-    static bool RPCParseCommandLine(interface::Node* node, std::string &strResult, const std::string &strCommand, bool fExecute, std::string * const pstrFilteredOut = nullptr, const std::string *walletID = nullptr);
-    static bool RPCExecuteCommandLine(interface::Node& node, std::string &strResult, const std::string &strCommand, std::string * const pstrFilteredOut = nullptr, const std::string *walletID = nullptr) {
+    static bool RPCParseCommandLine(interfaces::Node* node, std::string &strResult, const std::string &strCommand, bool fExecute, std::string * const pstrFilteredOut = nullptr, const std::string *walletID = nullptr);
+    static bool RPCExecuteCommandLine(interfaces::Node& node, std::string &strResult, const std::string &strCommand, std::string * const pstrFilteredOut = nullptr, const std::string *walletID = nullptr) {
         return RPCParseCommandLine(&node, strResult, strCommand, true, pstrFilteredOut, walletID);
     }
 
     void setClientModel(ClientModel *model);
     void addWallet(WalletModel * const walletModel);
+    void removeWallet(WalletModel* const walletModel);
 
     enum MessageClass {
         MC_ERROR,
@@ -144,19 +145,19 @@ private:
 
     };
 
-    interface::Node& m_node;
-    Ui::RPCConsole *ui;
-    ClientModel *clientModel;
+    interfaces::Node& m_node;
+    Ui::RPCConsole* const ui;
+    ClientModel *clientModel = nullptr;
     QStringList history;
-    int historyPtr;
+    int historyPtr = 0;
     QString cmdBeforeBrowsing;
     QList<NodeId> cachedNodeids;
-    const PlatformStyle *platformStyle;
-    RPCTimerInterface *rpcTimerInterface;
-    QMenu *peersTableContextMenu;
-    QMenu *banTableContextMenu;
-    int consoleFontSize;
-    QCompleter *autoCompleter;
+    const PlatformStyle* const platformStyle;
+    RPCTimerInterface *rpcTimerInterface = nullptr;
+    QMenu *peersTableContextMenu = nullptr;
+    QMenu *banTableContextMenu = nullptr;
+    int consoleFontSize = 0;
+    QCompleter *autoCompleter = nullptr;
     QThread thread;
     QString m_last_wallet_id;
 

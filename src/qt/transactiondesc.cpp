@@ -10,7 +10,7 @@
 #include <qt/transactionrecord.h>
 
 #include <consensus/consensus.h>
-#include <interface/node.h>
+#include <interfaces/node.h>
 #include <key_io.h>
 #include <validation.h>
 #include <script/script.h>
@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <string>
 
-QString TransactionDesc::FormatTxStatus(const interface::WalletTx& wtx, const interface::WalletTxStatus& status, bool inMempool, int numBlocks, int64_t adjustedTime)
+QString TransactionDesc::FormatTxStatus(const interfaces::WalletTx& wtx, const interfaces::WalletTxStatus& status, bool inMempool, int numBlocks, int64_t adjustedTime)
 {
     if (!status.is_final)
     {
@@ -48,14 +48,14 @@ QString TransactionDesc::FormatTxStatus(const interface::WalletTx& wtx, const in
     }
 }
 
-QString TransactionDesc::toHTML(interface::Node& node, interface::Wallet& wallet, TransactionRecord *rec, int unit)
+QString TransactionDesc::toHTML(interfaces::Node& node, interfaces::Wallet& wallet, TransactionRecord *rec, int unit)
 {
     int numBlocks;
     int64_t adjustedTime;
-    interface::WalletTxStatus status;
-    interface::WalletOrderForm orderForm;
+    interfaces::WalletTxStatus status;
+    interfaces::WalletOrderForm orderForm;
     bool inMempool;
-    interface::WalletTx wtx = wallet.getWalletTxDetails(rec->hash, status, orderForm, inMempool, numBlocks, adjustedTime);
+    interfaces::WalletTx wtx = wallet.getWalletTxDetails(rec->hash, status, orderForm, inMempool, numBlocks, adjustedTime);
 
     QString strHTML;
 
@@ -102,7 +102,7 @@ QString TransactionDesc::toHTML(interface::Node& node, interface::Wallet& wallet
             if (IsValidDestination(address)) {
                 std::string name;
                 isminetype ismine;
-                if (wallet.getAddress(address, &name, &ismine))
+                if (wallet.getAddress(address, &name, &ismine, /* purpose= */ nullptr))
                 {
                     strHTML += "<b>" + tr("From") + ":</b> " + tr("unknown") + "<br>";
                     strHTML += "<b>" + tr("To") + ":</b> ";
@@ -128,7 +128,8 @@ QString TransactionDesc::toHTML(interface::Node& node, interface::Wallet& wallet
         strHTML += "<b>" + tr("To") + ":</b> ";
         CTxDestination dest = DecodeDestination(strAddress);
         std::string name;
-        if (wallet.getAddress(dest, &name) && !name.empty())
+        if (wallet.getAddress(
+                dest, &name, /* is_mine= */ nullptr, /* purpose= */ nullptr) && !name.empty())
             strHTML += GUIUtil::HtmlEscape(name) + " ";
         strHTML += GUIUtil::HtmlEscape(strAddress) + "<br>";
     }
@@ -196,7 +197,8 @@ QString TransactionDesc::toHTML(interface::Node& node, interface::Wallet& wallet
                     {
                         strHTML += "<b>" + tr("To") + ":</b> ";
                         std::string name;
-                        if (wallet.getAddress(address, &name) && !name.empty())
+                        if (wallet.getAddress(
+                                address, &name, /* is_mine= */ nullptr, /* purpose= */ nullptr) && !name.empty())
                             strHTML += GUIUtil::HtmlEscape(name) + " ";
                         strHTML += GUIUtil::HtmlEscape(EncodeDestination(address));
                         if(toSelf == ISMINE_SPENDABLE)
@@ -319,7 +321,7 @@ QString TransactionDesc::toHTML(interface::Node& node, interface::Wallet& wallet
                     if (ExtractDestination(vout.scriptPubKey, address))
                     {
                         std::string name;
-                        if (wallet.getAddress(address, &name) && !name.empty())
+                        if (wallet.getAddress(address, &name, /* is_mine= */ nullptr, /* purpose= */ nullptr) && !name.empty())
                             strHTML += GUIUtil::HtmlEscape(name) + " ";
                         strHTML += QString::fromStdString(EncodeDestination(address));
                     }

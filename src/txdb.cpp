@@ -21,7 +21,6 @@
 static const char DB_COIN = 'C';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
-static const char DB_TXINDEX = 't';
 static const char DB_BLOCK_INDEX = 'b';
 
 static const char DB_BEST_BLOCK = 'B';
@@ -236,17 +235,6 @@ bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockF
     return WriteBatch(batch, true);
 }
 
-bool CBlockTreeDB::ReadTxIndex(const uint256 &txid, CDiskTxPos &pos) {
-    return Read(std::make_pair(DB_TXINDEX, txid), pos);
-}
-
-bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> >&vect) {
-    CDBBatch batch(*this);
-    for (std::vector<std::pair<uint256,CDiskTxPos> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
-        batch.Write(std::make_pair(DB_TXINDEX, it->first), it->second);
-    return WriteBatch(batch);
-}
-
 bool CBlockTreeDB::WriteFlag(const std::string &name, bool fValue) {
     return Write(std::make_pair(DB_FLAG, name), fValue ? '1' : '0');
 }
@@ -370,7 +358,7 @@ bool CCoinsViewDB::Upgrade() {
 
     int64_t count = 0;
     LogPrintf("Upgrading utxo-set database...\n");
-    LogPrintf("[0%%]...");
+    LogPrintf("[0%%]..."); /* Continued */
     uiInterface.ShowProgress(_("Upgrading UTXO database"), 0, true);
     size_t batch_size = 1 << 24;
     CDBBatch batch(db);
@@ -389,7 +377,7 @@ bool CCoinsViewDB::Upgrade() {
                 uiInterface.ShowProgress(_("Upgrading UTXO database"), percentageDone, true);
                 if (reportDone < percentageDone/10) {
                     // report max. every 10% step
-                    LogPrintf("[%d%%]...", percentageDone);
+                    LogPrintf("[%d%%]...", percentageDone); /* Continued */
                     reportDone = percentageDone/10;
                 }
             }

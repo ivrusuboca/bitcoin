@@ -14,6 +14,9 @@ purposes. As such there are repository "maintainers" who are responsible for
 merging pull requests as well as a "lead maintainer" who is responsible for the
 release cycle, overall merging, moderation and appointment of maintainers.
 
+If you're looking for somewhere to start contributing, check out the
+[good first issue](https://github.com/bitcoin/bitcoin/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+list.
 
 Communication Channels
 ----------------------
@@ -124,10 +127,10 @@ before it will be merged. The basic squashing workflow is shown below.
 
     git checkout your_branch_name
     git rebase -i HEAD~n
-    # n is normally the number of commits in the pull
-    # set commits from 'pick' to 'squash', save and quit
-    # on the next screen, edit/refine commit messages
-    # save and quit
+    # n is normally the number of commits in the pull request.
+    # Set commits (except the one in the first line) from 'pick' to 'squash', save and quit.
+    # On the next screen, edit/refine commit messages.
+    # Save and quit.
     git push -f # (force push to GitHub)
 
 If you have problems with squashing (or other workflows with `git`), you can

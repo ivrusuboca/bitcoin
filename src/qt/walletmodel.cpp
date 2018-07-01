@@ -12,8 +12,8 @@
 #include <qt/sendcoinsdialog.h>
 #include <qt/transactiontablemodel.h>
 
-#include <interface/handler.h>
-#include <interface/node.h>
+#include <interfaces/handler.h>
+#include <interfaces/node.h>
 #include <key_io.h>
 #include <ui_interface.h>
 #include <util.h> // for GetBoolArg
@@ -28,7 +28,7 @@
 #include <QTimer>
 
 
-WalletModel::WalletModel(std::unique_ptr<interface::Wallet> wallet, interface::Node& node, const PlatformStyle *platformStyle, OptionsModel *_optionsModel, QObject *parent) :
+WalletModel::WalletModel(std::unique_ptr<interfaces::Wallet> wallet, interfaces::Node& node, const PlatformStyle *platformStyle, OptionsModel *_optionsModel, QObject *parent) :
     QObject(parent), m_wallet(std::move(wallet)), m_node(node), optionsModel(_optionsModel), addressTableModel(0),
     transactionTableModel(0),
     recentRequestsTableModel(0),
@@ -70,7 +70,7 @@ void WalletModel::pollBalanceChanged()
     // avoids the GUI from getting stuck on periodical polls if the core is
     // holding the locks for a longer time - for example, during a wallet
     // rescan.
-    interface::WalletBalances new_balances;
+    interfaces::WalletBalances new_balances;
     int numBlocks = -1;
     if (!m_wallet->tryGetBalances(new_balances, numBlocks)) {
         return;
@@ -89,7 +89,7 @@ void WalletModel::pollBalanceChanged()
     }
 }
 
-void WalletModel::checkBalanceChanged(const interface::WalletBalances& new_balances)
+void WalletModel::checkBalanceChanged(const interfaces::WalletBalances& new_balances)
 {
     if(new_balances.balanceChanged(m_cached_balances)) {
         m_cached_balances = new_balances;
@@ -274,7 +274,8 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(WalletModelTransaction &tran
             {
                 // Check if we have a new address or an updated label
                 std::string name;
-                if (!m_wallet->getAddress(dest, &name))
+                if (!m_wallet->getAddress(
+                     dest, &name, /* is_mine= */ nullptr, /* purpose= */ nullptr))
                 {
                     m_wallet->setAddressBook(dest, strLabel, "send");
                 }
@@ -363,6 +364,12 @@ bool WalletModel::changePassphrase(const SecureString &oldPass, const SecureStri
 }
 
 // Handlers for core signals
+static void NotifyUnload(WalletModel* walletModel)
+{
+    qDebug() << "NotifyUnload";
+    QMetaObject::invokeMethod(walletModel, "unload", Qt::QueuedConnection);
+}
+
 static void NotifyKeyStoreStatusChanged(WalletModel *walletmodel)
 {
     qDebug() << "NotifyKeyStoreStatusChanged";
@@ -410,6 +417,7 @@ static void NotifyWatchonlyChanged(WalletModel *walletmodel, bool fHaveWatchonly
 void WalletModel::subscribeToCoreSignals()
 {
     // Connect signals to wallet
+    m_handler_unload = m_wallet->handleUnload(boost::bind(&NotifyUnload, this));
     m_handler_status_changed = m_wallet->handleStatusChanged(boost::bind(&NotifyKeyStoreStatusChanged, this));
     m_handler_address_book_changed = m_wallet->handleAddressBookChanged(boost::bind(NotifyAddressBookChanged, this, _1, _2, _3, _4, _5));
     m_handler_transaction_changed = m_wallet->handleTransactionChanged(boost::bind(NotifyTransactionChanged, this, _1, _2));
@@ -420,6 +428,7 @@ void WalletModel::subscribeToCoreSignals()
 void WalletModel::unsubscribeFromCoreSignals()
 {
     // Disconnect signals from wallet
+    m_handler_unload->disconnect();
     m_handler_status_changed->disconnect();
     m_handler_address_book_changed->disconnect();
     m_handler_transaction_changed->disconnect();
@@ -486,7 +495,7 @@ bool WalletModel::saveReceiveRequest(const std::string &sAddress, const int64_t 
 bool WalletModel::bumpFee(uint256 hash)
 {
     CCoinControl coin_control;
-    coin_control.signalRbf = true;
+    coin_control.m_signal_bip125_rbf = true;
     std::vector<std::string> errors;
     CAmount old_fee;
     CAmount new_fee;

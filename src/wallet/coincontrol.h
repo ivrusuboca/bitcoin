@@ -22,16 +22,16 @@ public:
     boost::optional<OutputType> m_change_type;
     //! If false, allows unselected inputs, but requires all selected inputs be used
     bool fAllowOtherInputs;
-    //! Includes watch only addresses which match the ISMINE_WATCH_SOLVABLE criteria
+    //! Includes watch only addresses which are solvable
     bool fAllowWatchOnly;
     //! Override automatic min/max checks on fee, m_feerate must be set if true
     bool fOverrideFeeRate;
-    //! Override the default payTxFee if set
+    //! Override the wallet's m_pay_tx_fee if set
     boost::optional<CFeeRate> m_feerate;
     //! Override the default confirmation target if set
     boost::optional<unsigned int> m_confirm_target;
-    //! Signal BIP-125 replace by fee.
-    bool signalRbf;
+    //! Override the wallet's m_signal_rbf if set
+    boost::optional<bool> m_signal_bip125_rbf;
     //! Fee estimation mode to control arguments to estimateSmartFee
     FeeEstimateMode m_fee_mode;
 
@@ -50,7 +50,7 @@ public:
         m_feerate.reset();
         fOverrideFeeRate = false;
         m_confirm_target.reset();
-        signalRbf = fWalletRbf;
+        m_signal_bip125_rbf.reset();
         m_fee_mode = FeeEstimateMode::UNSET;
     }
 
