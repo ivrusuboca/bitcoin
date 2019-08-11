@@ -7,9 +7,8 @@
 #include <qt/receivecoinsdialog.h>
 #include <qt/forms/ui_receivecoinsdialog.h>
 
-#include <qt/addressbookpage.h>
+#include <interfaces/node.h>
 #include <qt/addresstablemodel.h>
-#include <qt/bitcoinunits.h>
 #include <qt/optionsmodel.h>
 #include <qt/platformstyle.h>
 #include <qt/receiverequestdialog.h>
@@ -25,8 +24,8 @@
 ReceiveCoinsDialog::ReceiveCoinsDialog(const PlatformStyle *_platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ReceiveCoinsDialog),
-    columnResizingFixer(0),
-    model(0),
+    columnResizingFixer(nullptr),
+    model(nullptr),
     platformStyle(_platformStyle)
 {
     ui->setupUi(this);
@@ -94,14 +93,25 @@ void ReceiveCoinsDialog::setModel(WalletModel *_model)
         // Last 2 columns are set by the columnResizingFixer, when the table geometry is ready.
         columnResizingFixer = new GUIUtil::TableViewLastColumnResizingFixer(tableView, AMOUNT_MINIMUM_COLUMN_WIDTH, DATE_COLUMN_WIDTH, this);
 
-        if (model->wallet().getDefaultAddressType() == OutputType::BECH32) {
-            ui->useBech32->setCheckState(Qt::Checked);
+        if (model->node().isAddressTypeSet()) {
+            // user explicitly set the type, use it
+            if (model->wallet().getDefaultAddressType() == OutputType::BECH32) {
+                ui->useLegacyAddress->setCheckState(Qt::Unchecked);
+            } else {
+                ui->useLegacyAddress->setCheckState(Qt::Checked);
+            }
         } else {
-            ui->useBech32->setCheckState(Qt::Unchecked);
+            // Always fall back to bech32 in the gui
+            ui->useLegacyAddress->setCheckState(Qt::Unchecked);
         }
 
-        // eventually disable the main receive button if private key operations are disabled
-        ui->receiveButton->setEnabled(!model->privateKeysDisabled());
+        // Set the button to be enabled or disabled based on whether the wallet can give out new addresses.
+        ui->receiveButton->setEnabled(model->canGetAddresses());
+
+        // Enable/disable the receive button if the wallet is now able/unable to give out new addresses.
+        connect(model, &WalletModel::canGetAddressesChanged, [this] {
+            ui->receiveButton->setEnabled(model->canGetAddresses());
+        });
     }
 }
 
@@ -145,7 +155,7 @@ void ReceiveCoinsDialog::on_receiveButton_clicked()
     QString label = ui->reqLabel->text();
     /* Generate new receiving address */
     OutputType address_type;
-    if (ui->useBech32->isChecked()) {
+    if (!ui->useLegacyAddress->isChecked()) {
         address_type = OutputType::BECH32;
     } else {
         address_type = model->wallet().getDefaultAddressType();
